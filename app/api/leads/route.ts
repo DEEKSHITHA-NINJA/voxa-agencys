@@ -38,7 +38,13 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, email, mobile, city, message, source } = body;
     if (!name || !email) return NextResponse.json({ error: "Name and email are required." }, { status: 400 });
-    const smsStatus = await sendConfirmationSms(mobile || "");
+    let smsStatus: string;
+    try {
+      smsStatus = await sendConfirmationSms(mobile || "");
+    } catch (smsError) {
+      console.error("SMS confirmation failed:", smsError);
+      smsStatus = "failed";
+    }
     const lead = { id: crypto.randomUUID(), name, email, mobile: mobile || "", city: city || "", message: message || "", smsStatus, source: source || "website", createdAt: new Date().toISOString() };
     await mkdir(path.dirname(leadsPath), { recursive: true });
     await appendFile(leadsPath, JSON.stringify(lead) + "\n", "utf8");
